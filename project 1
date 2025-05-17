@@ -1,0 +1,191 @@
+import pandas as pd
+from datetime import datetime
+import os
+
+filename = "health_dataas.xlsx"
+# Check if the file exists, if not create a new DataFrame
+if os.path.exists(filename):
+    df = pd.read_excel(filename)
+else:
+    df = pd.DataFrame(columns=[                             
+        "Username", "Password", "Name", "Age", "Heart Rate", "Temperature (°C)",   
+        "Oxygen (%)", "Blood Pressure", "Blood Sugar", "Weight (kg)",
+        "Height (cm)", "BMI", "Timestamp"
+    ])
+
+print("\n\n--- Welcome to the Health Monitor System ---")
+username = input("Enter Username: ").strip()
+password = input("Enter Password: ").strip()
+
+# Check if user exists
+df["Username"] = df["Username"].astype(str).str.strip()
+df["Password"] = df["Password"].astype(str).str.strip()
+user_data = df[(df["Username"] == username) & (df["Password"] == password)]
+
+if not user_data.empty:
+    print("\n Login successful!")
+    name = user_data.iloc[-1]["Name"]
+    age = int(user_data.iloc[-1]["Age"])
+else:
+    print("\n Registering new user...")
+    name = input("Enter your Name: ")
+    age = int(input("Enter your Age: "))
+
+print(f"\nWelcome, {name}! Please enter your current health details:\n")
+                                                                       # Input health parameters
+Heart_rate = int(input("Heart Rate: "))
+temperature = float(input("Temperature (°C): "))
+o2 = float(input("Oxygen Saturation (%): "))
+Bp = int(input("Blood Pressure: "))
+bsugar = int(input("Blood Sugar Level: "))
+weight = float(input("Weight (kg): "))
+height = float(input("Height (cm): "))
+hh = height / 100
+bmi = round(weight / (hh ** 2), 2)
+print(f"\nHellow, \n{name}, here is your health report:")
+
+                                        # Calculates the maximum and minim weight required for given height to calculate BMI
+min_weight = round(18.5 * (hh ** 2), 2)
+max_weight = round(24.9 * (hh ** 2), 2)
+
+print(f"\nFor a height of {height} cm, the normal weight range is between {min_weight} kg and {max_weight} kg.")
+
+# BMI
+if bmi < 18.5:
+    print(f"\nYour BMI is {round(bmi, 2)} and You Are Underweight")
+elif 18.5 <= bmi < 25:
+     print(f"\nYour BMI is {round(bmi, 2)} And You Are Normal")
+elif 25 <= bmi < 30:
+     print(f"\nYour BMI is {round(bmi, 2)} And You Are Overweight")
+else:
+     print(f"\nYour BMI is {round(bmi, 2)} And You Are Obese")
+
+# Blood Pressure
+if Bp < 90:
+    print(f'\nYour Blood Pressure is {Bp} and Its Too Low')
+elif 90 <= Bp < 120:
+    print(f'\nYour Blood Pressure is {Bp} and Its Normal')
+elif 120 <= Bp < 140:
+    print(f'\nYour Blood Pressure is {Bp} and Its Above Normal')
+else:
+    print(f'\nYour Blood Pressure is {Bp} and Its Extremely High')
+
+# Blood Sugar
+if bsugar < 70:
+    print(f'\nYour Blood Sugar Level is {bsugar} and Its Too Low')
+elif 70 <= bsugar < 140:
+    print(f'\nYour Blood Sugar Level is {bsugar} and Its Normal')
+elif 140 <= bsugar < 160:
+    print(f'\nYour Blood Sugar Level is {bsugar} and Its Above Normal')
+else:
+    print(f'\nYour Blood Sugar Level is {bsugar} and Its Extremely High')
+
+# Heart Rate
+MHR = 220 - age
+if Heart_rate < 60:
+    print(f"\nYour Heart Rate is {Heart_rate}, and it's Too Low")
+elif 60 <= Heart_rate < 100:
+    print(f"\nYour Heart Rate is {Heart_rate}, and it's Normal")
+elif 100 <= Heart_rate < MHR:
+    print(f"\nYour Heart Rate is {Heart_rate}, and it's High")
+else:
+    print(f"\nYour Heart Rate is {Heart_rate}, and it's Too High")
+
+# Temperature
+if 36.1 <= temperature <= 37.5:
+    print(f"\nYour Temperature is {temperature}°C and it's Normal")
+elif 37.6 <= temperature <= 38.5:
+    print(f"\nYour Temperature is {temperature}°C and it's Mild Fever")
+elif 38.6 <= temperature <= 39.9:
+    print(f"\nYour Temperature is {temperature}°C and it's High Fever")
+elif temperature >= 40:
+    print(f"\nYour Temperature is {temperature}°C and it's Critical")
+else:
+    print(f"\nYour Temperature is {temperature}°C and it's Low")
+
+# Oxygen Saturation
+if 100 <= o2 >= 95:
+    print(f"\nYour Oxygen Level is {o2}%, and it's Good")
+elif 90 <= o2 < 95:
+    print(f"\nYour Oxygen Level is {o2}%, and it's Low")
+elif 80 <= o2 < 90:
+    print(f"\nYour Oxygen Level is {o2}%, and it's Very Low")
+else:
+    print(f"\nYour Oxygen Level is {o2}%, and it's Critical")
+
+# Save Data
+new_entry = {
+    "Username": username,
+    "Password": password,
+    "Name": name,
+    "Age": age,
+    "Heart Rate": Heart_rate,
+    "Temperature (°C)": temperature,
+    "Oxygen (%)": o2,
+    "Blood Pressure": Bp,
+    "Blood Sugar": bsugar,
+    "Weight (kg)": weight,
+    "Height (cm)": height,
+    "BMI": bmi,
+    "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+}
+
+df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
+df.to_excel(filename, index=False)
+print("\n Health data saved successfully!")
+# Compare with previous record (if exists)
+user_history = df[(df["Username"] == username) & (df["Password"] == password)]
+if len(user_history) > 1:
+    last_record = user_history.iloc[-2]  # 2nd last entry
+    print("\n Comparing with your previous health data:\n")
+
+    def compare(name, old, new, unit=""):
+        change = round(new - old, 2)
+        if change > 0:
+            arrow = "↑"
+            suggestion = f"{name} increased by {change}{unit}. "
+        elif change < 0:
+            arrow = "↓"
+            suggestion = f"{name} decreased by {abs(change)}{unit}. "
+        else:
+            arrow = "→"
+            suggestion = f"{name} is the same. "
+
+        # Add health tips
+        tips = {
+            "Heart Rate": "Try to relax and manage stress." if change > 0 else "Monitor for fatigue or weakness.",
+            "Temperature": "Check for signs of infection." if change > 0 else "Could be normal or cold exposure.",
+            "Oxygen": "Consider deep breathing or fresh air." if change < 0 else "Good progress!",
+            "Blood Pressure": "Reduce salt intake and exercise." if change > 0 else "Good control!",
+            "Blood Sugar": "Watch sugar intake." if change > 0 else "Keep it stable!",
+            "BMI": "Consider diet/exercise changes." if abs(change) > 0.5 else "Stable BMI!"
+        }
+
+        print(f"{name:<18} | Prev: {old:<6} → Now: {new:<6} {arrow} | {suggestion}{tips.get(name, '')}")
+
+    compare("Heart Rate", last_record["Heart Rate"], Heart_rate)
+    compare("Temperature", last_record["Temperature (°C)"], temperature, "°C")
+    compare("Oxygen", last_record["Oxygen (%)"], o2, "%")
+    compare("Blood Pressure", last_record["Blood Pressure"], Bp)
+    compare("Blood Sugar", last_record["Blood Sugar"], bsugar)
+    compare("BMI", last_record["BMI"], bmi)
+else:
+    print("\nNot enough previous records for comparison.")
+
+
+# Show full comparison
+compare = input("\nDo you want to view all your previous records? (y/n): ").lower()
+if compare == 'y':
+    history = df[(df["Username"] == username) & (df["Password"] == password)]
+    if not history.empty:
+        print("\n Your Full Health History:\n")
+        print(history[[
+            "Timestamp", "Heart Rate", "Temperature (°C)", "Oxygen (%)",
+            "Blood Pressure", "Blood Sugar", "BMI"
+        ]].to_string(index=False))
+    else:
+        print("No previous records found.")
+else:
+    print("\nOkay, no history shown.")
+
+print("\n Thank you for using the Health Monitor System. Stay healthy!")
